@@ -1,14 +1,14 @@
 package com.exatip.payload;
 
-public class LoginRequest {
+public class JwtTokenRequest {
 	private String username;
 	private String password;
 
-	public LoginRequest() {
+	public JwtTokenRequest() {
 
 	}
 
-	public LoginRequest(String username, String password) {
+	public JwtTokenRequest(String username, String password) {
 		this.username = username;
 		this.password = password;
 	}

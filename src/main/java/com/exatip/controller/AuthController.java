@@ -6,8 +6,6 @@ import java.util.Set;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,11 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.exatip.constenum.ERole;
 import com.exatip.domain.Role;
 import com.exatip.domain.User;
-import com.exatip.payload.LoginRequest;
+import com.exatip.payload.JwtTokenRequest;
 import com.exatip.payload.SignupRequest;
 import com.exatip.repo.RoleRepository;
 import com.exatip.repo.UserRepository;
-import com.exatip.response.MessageResponse;
+import com.exatip.response.JwtResponse;
 import com.exatip.security.jwt.JwtUtils;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -50,25 +48,27 @@ public class AuthController {
 	JwtUtils jwtUtils;
 
 	@PostMapping("/signin")
-	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest login) {
+	public ResponseEntity<?> authenticateUser(@Valid @RequestBody JwtTokenRequest request) {
+
 		Authentication authentication = authenticationManager
-				.authenticate(new UsernamePasswordAuthenticationToken(login.getUsername(), login.getPassword()));
+				.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+
 		SecurityContextHolder.getContext().setAuthentication(authentication);
+
 		String jwt = jwtUtils.generateToken(authentication);
+
 		return ResponseEntity.ok(jwt);
 	}
-
-	
 
 	@PostMapping("/signup")
 	public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
 
 		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-			return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
+			return ResponseEntity.badRequest().body(new JwtResponse("Error: Username is already taken!"));
 		}
 
 		if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-			return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already in use!"));
+			return ResponseEntity.badRequest().body(new JwtResponse("Error: Email is already in use!"));
 		}
 
 		// Create new user's account
@@ -108,13 +108,6 @@ public class AuthController {
 		user.setRoles(roles);
 		userRepository.save(user);
 
-		return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
-	}
-
-	@PostMapping("/signout")
-	public ResponseEntity<?> logoutUser() {
-		ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
-		return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
-				.body(new MessageResponse("You've been signed out!"));
+		return ResponseEntity.ok(new JwtResponse("User registered successfully!"));
 	}
 }
